@@ -16,7 +16,7 @@
         height: 64px;
         position: absolute;
 
-        top: 10px;
+        top: 30px;
         left: 10px;
       }
     </style>
@@ -51,30 +51,29 @@
 
     <script>
       var mouseImg = document.getElementById("mouseme"),
-        state = 1; // 1 is stop and 2 is start
-
-      var socket = io();
-      var mouseImg = document.getElementById("mouseme"),
-        playrecord = document.getElementById("playrecord");
-      playlive = document.getElementById("playlive");
+        state = true, // 1 is stop and 2 is start
+        socket = io(),
+        mouseImg = document.getElementById("mouseme"),
+        playrecord = document.getElementById("playrecord"),
+        playlive = document.getElementById("playlive");
 
       playrecord.addEventListener("mousedown", playfromrecord, false);
       playlive.addEventListener("mousedown", playitlive, false);
 
       function playitlive() {
-        if (state === 1) {
-          state = 2;
+        if (state === true) {
+          state = !state;
+          socket.connect();
           socket.on("mouse_position", function (msg) {
-            console.log(msg);
             mouseImg.style.left = msg.mx + "px";
             mouseImg.style.top = msg.my + "px";
           });
         } else {
-          state = 1;
-          socket.emit("end");
+          state = !state;
+          socket.disconnect();
+          socket.close();
+          socket.disconnect(true);
         }
-
-        console.log(state);
       }
 
       function playfromrecord() {

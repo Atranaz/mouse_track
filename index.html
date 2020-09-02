@@ -79,18 +79,19 @@
         image = mouseImg;
         play.disabled = true;
         stopme.disabled = false;
-        document.addEventListener("mousemove", throttle(move, 10), false);
+
+        document.addEventListener("mousemove", move, false);
       }
 
       function move(e) {
         var newX = e.clientX + 30;
         var newY = e.clientY + 30;
 
-        setTimeout(function () {
-          socket.emit("mouse_position", { mx: newX, my: newY });
-          image.style.left = newX + "px";
-          image.style.top = newY + "px";
-        }, 1000);
+        // setTimeout(function () {
+        socket.emit("mouse_position", { mx: newX, my: newY, state: 1 });
+        image.style.left = newX + "px";
+        image.style.top = newY + "px";
+        // }, 1000);
 
         if (state === 2) {
           frames.push([newX, newY]);
@@ -99,7 +100,7 @@
 
       function stopMovment() {
         if (moving) {
-          document.removeEventListener("mousemove", move);
+          document.removeEventListener("mousemove", move, false);
           moving = !moving;
           play.disabled = false;
           stopme.disabled = true;

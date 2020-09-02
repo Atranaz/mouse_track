@@ -62,6 +62,7 @@ app.get("/getdata", (req, res) => {
 io.on("connection", (socket) => {
   socket.on("mouse_position", (msg) => {
     socket.broadcast.emit("mouse_position", msg);
+    socket.disconnected;
   });
 });
 
