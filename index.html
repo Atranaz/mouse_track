@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Mouse cursor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font: 13px Helvetica, Arial;
+      }
+      #mouseme {
+        width: 32px;
+        height: 32px;
+        position: absolute;
+
+        top: 10px;
+        left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <img id="mouseme" src="cursor.png" alt="cursor" width="32" />
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" id="play" class="btn btn-success">
+              Play
+            </button>
+            <button type="button" id="stopme" class="btn btn-danger" disabled>
+              Stop
+            </button>
+
+            <button type="button" id="startrecording" class="btn btn-warning">
+              Start Record
+            </button>
+            <button
+              type="button"
+              id="stoprecording"
+              class="btn btn-danger"
+              disabled
+            >
+              Stop Recording
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script>
+      let play = document.getElementById("play"),
+        stopme = document.getElementById("stopme"),
+        startrecording = document.getElementById("startrecording"),
+        stoprecording = document.getElementById("stoprecording"),
+        playrecord = document.getElementById("playrecord");
+
+      var mouseImg = document.getElementById("mouseme"),
+        moving = false,
+        frames = [],
+        user_data = {},
+        state = 1,
+        socket = io();
+
+      play.addEventListener("mousedown", initialClick, false);
+      stopme.addEventListener("mousedown", stopMovment, false);
+      startrecording.addEventListener("mousedown", startRecording, false);
+      stoprecording.addEventListener("mousedown", stopRecording, false);
+
+      function initialClick(e) {
+        moving = !moving;
+        image = mouseImg;
+        play.disabled = true;
+        stopme.disabled = false;
+        document.addEventListener("mousemove", throttle(move, 10), false);
+      }
+
+      function move(e) {
+        var newX = e.clientX + 30;
+        var newY = e.clientY + 30;
+
+        setTimeout(function () {
+          socket.emit("mouse_position", { mx: newX, my: newY });
+          image.style.left = newX + "px";
+          image.style.top = newY + "px";
+        }, 1000);
+
+        if (state === 2) {
+          frames.push([newX, newY]);
+        }
+      }
+
+      function stopMovment() {
+        if (moving) {
+          document.removeEventListener("mousemove", move);
+          moving = !moving;
+          play.disabled = false;
+          stopme.disabled = true;
+          socket.disconnect();
+          return;
+        }
+      }
+
+      function startRecording(e) {
+        state = 2;
+        user_data.starttime = new Date().getTime() / 1000;
+        stoprecording.disabled = false;
+        startrecording.disabled = true;
+      }
+
+      function stopRecording() {
+        if (moving) {
+          document.removeEventListener("mousemove", move);
+          moving = !moving;
+          state = 1;
+          user_data.endtime = new Date().getTime() / 1000;
+          startrecording.disabled = false;
+          stoprecording.disabled = true;
+          play.disabled = false;
+          stopme.disabled = true;
+          saveData();
+          return;
+        }
+      }
+
+      function throttle(callback, delay) {
+        var previousCall = new Date().getTime();
+        return function () {
+          var time = new Date().getTime();
+
+          if (time - previousCall >= delay) {
+            previousCall = time;
+            callback.apply(null, arguments);
+          }
+        };
+      }
+
+      function saveData() {
+        user_data.frames = frames;
+
+        if (frames.length >= 0) {
+          fetch("/savedata", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(user_data),
+          })
+            .then((response) => {
+              frames.splice(0, frames.length);
+              for (let prop in user_data) {
+                delete user_data[prop];
+              }
+            })
+
+            .catch((error) => {
+              console.error("Error:", error);
+            });
+        } else {
+          console.log("record first");
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>mouse cursor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font: 13px Helvetica, Arial;
+      }
+      #mouseme {
+        width: 64px;
+        height: 64px;
+        position: absolute;
+
+        top: 10px;
+        left: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <img
+            id="mouseme"
+            src="https://static.thenounproject.com/png/1188209-200.png"
+            alt="cursor"
+            width="64"
+          />
+          <div class="btn-group" role="group" aria-label="Basic example">
+            <button type="button" id="playlive" class="btn btn-success">
+              Play Live
+            </button>
+            <button type="button" id="playrecord" class="btn btn-success">
+              Play from record
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+      var mouseImg = document.getElementById("mouseme"),
+        state = 1; // 1 is stop and 2 is start
+
+      var socket = io();
+      var mouseImg = document.getElementById("mouseme"),
+        playrecord = document.getElementById("playrecord");
+      playlive = document.getElementById("playlive");
+
+      playrecord.addEventListener("mousedown", playfromrecord, false);
+      playlive.addEventListener("mousedown", playitlive, false);
+
+      function playitlive() {
+        if (state === 1) {
+          state = 2;
+          socket.on("mouse_position", function (msg) {
+            console.log(msg);
+            mouseImg.style.left = msg.mx + "px";
+            mouseImg.style.top = msg.my + "px";
+          });
+        } else {
+          state = 1;
+          socket.emit("end");
+        }
+
+        console.log(state);
+      }
+
+      function playfromrecord() {
+        fetch("/getdata", {
+          method: "get",
+        })
+          .then((response) => response.json())
+          .then((jsonData) => {
+            playrecord.disabled = true;
+            image = mouseImg;
+            let move_data = jsonData.newdata;
+            let play_time = (jsonData.end_time - jsonData.start_time) * 3;
+            move_data.forEach((element, i) => {
+              setTimeout(function () {
+                image.style.display = "block";
+                image.style.left = element[0] + "px";
+                image.style.top = element[1] + "px";
+
+                if (i == move_data.length) {
+                  image.style.display = "none";
+                  image.style.top = "0px";
+
+                  playrecord.disabled = false;
+                }
+              }, play_time * i++);
+            });
+          })
+          .catch((err) => {
+            //error block
+          });
+      }
+    </script>
+  </body>
+</html>
