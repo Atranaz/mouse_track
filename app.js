@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 var http = require("http").createServer(app);
+const port = process.env.PORT || 3000;
 var io = require("socket.io")(http);
 const path = require("path");
 const mysql = require("mysql");
