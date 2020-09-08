@@ -61,9 +61,9 @@
       playlive.addEventListener("mousedown", playitlive, false);
 
       function playitlive() {
-        if (state === true) {
-          console.log(state);
+        if (state) {
           state = !state;
+          console.log(state);
           socket.connect();
           socket.on("mouse_position", function (msg) {
             mouseImg.style.left = msg.mx + "px";
